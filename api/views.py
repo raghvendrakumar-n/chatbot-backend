@@ -376,6 +376,21 @@ def submit_appointment(request: Request) -> Response:
         },
     )
 
+@api_view(["GET"])
+def patients_by_phone(request: Request) -> Response:
+    phone = request.query_params.get("phone", "")
+    if hims.enabled():
+        code, message, response = hims.patients_by_phone(phone)
+        return envelope(code, message, response)
+    found = data.find_appointments_by_phone(phone)
+    if not found:
+        return envelope(
+            404,
+            "No patients found",
+            "No patients found for this mobile number.",
+        )
+    return envelope(200, "Patients found", found)
+
 
 @api_view(["GET"])
 def appointments_by_phone(request: Request) -> Response:

@@ -413,6 +413,7 @@ def create_appointment(payload: dict[str, Any]) -> tuple[int, str, Any]:
         "organization": org,
         "branch": payload.get("branch") or payload.get("branch_id"),
         "department": payload.get("department") or payload.get("department_id"),
+        "patient_id": payload.get("patient") or payload.get("patient_id"),
         "doctor": payload.get("doctor") or payload.get("doctor_id"),
         "date_slot": payload.get("date_slot") or payload.get("date_slot_id"),
         "time_slot": payload.get("time_slot")
@@ -472,6 +473,40 @@ def create_appointment(payload: dict[str, Any]) -> tuple[int, str, Any]:
 # Backwards-compatible alias used by views.submit_appointment
 create_lead = create_appointment
 
+def patients_by_phone(phone: str) -> tuple[int, str, Any]:
+    """POST patients-by-phone/ — list patients for a mobile."""
+    org = organization_id()
+    body: dict[str, Any] = {"phone": phone, "mobile": phone}
+    if org is not None:
+        body["organization"] = org
+        body["tenant"] = org
+    try:
+        data = _post("patients-by-phone/", body, page_size=None, auth=False)
+        results = _results(data) if isinstance(data, dict) else []
+        status_code = int((data or {}).get("status") or 200) if isinstance(data, dict) else 200
+        message = (
+            (data or {}).get("message")
+            if isinstance(data, dict)
+            else "Patients found"
+        )
+        if not results or status_code == 404:
+            return (
+                404,
+                "No patients found",
+                message
+                or "No patients found for this mobile number.",
+            )
+        return 200, str(message or "Appointments found"), results
+    except httpx.HTTPStatusError as exc:
+        logger.exception("HIMS patients-by-phone failed")
+        try:
+            detail = exc.response.json()
+        except Exception:
+            detail = exc.response.text
+        return exc.response.status_code, "HIMS patients lookup error", detail
+    except httpx.HTTPError as exc:
+        logger.exception("HIMS patients-by-phone unreachable")
+        return 502, "Unable to reach HIMS", str(exc)
 
 def appointments_by_phone(phone: str) -> tuple[int, str, Any]:
     """POST appointments-by-phone/ — list upcoming appointments for a mobile."""

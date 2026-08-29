@@ -26,6 +26,7 @@ urlpatterns = [
     path("surgeries", views.surgeries),
     path("time-slots", views.time_slots),
     # Appointments
+    path("patients", views.patients_by_phone),
     path("appointments", views.appointments_by_phone),
     path("appointments/submit", views.submit_appointment),
     path("appointments/cancel", views.cancel_appointment),
