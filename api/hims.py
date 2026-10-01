@@ -284,6 +284,7 @@ def get_doctors(
                     "id": doctor_id,
                     "doctor_name": name,
                     "qualification": d.get("qualification") or "",
+                    "experience": d.get("experience") or "",
                     "profile_photo": d.get("profile_photo")
                     or "assets/userIcons/doctor-dummy.svg",
                     "profile_url": d.get("profile_url") or "",
